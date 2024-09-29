@@ -4,52 +4,72 @@
 // Description: Funny program to "determine" when it is time to eat tater tots in C++
 // To run program: Ctrl + F5 OR Ctrl + FN + F5 if you have the FN key
 
+#include <ciso646>
+#include <exception>
 #include <iostream>
-#include <iomanip>
-#include <string>
-#include <cstdlib>
+#include <optional>
+#include <sstream>
 #include <stdexcept>
-#include "tatertot.h"
+#include <string>
 
 using namespace std;
 
-int main() {
-    int DaysNumber;
-   
-    // Asks the user how long it’s been since they ate tater tots
-    cout << "How long has it been since you had some yummy tots?" << endl;
-    cout << "Enter the number of days: " << endl;
-    cin >> DaysNumber;
-
-    // Handles invalid inputs
-    try {
-       // If it’s been a week (or more) since the user ate tater tots…
-        if (DaysNumber >= 7) {
-            cout << "Yay! I bet those tots were delicious. Here's a recipe to try next time you want to eat tater tots: " << endl;
-            cout << "https://www.allrecipes.com/recipe/236749/tater-tots-nachos/";
-            abort();
-        }
-
-        // If the user ate tater tots recently…
-        else {
-            cout << "It. Is. TATER TOT TIME!" << endl;
-            cout << "Go enjoy some yummy tots!" << endl;
-            cout << "https://www.allrecipes.com/recipe/236749/tater-tots-nachos/";
-            abort();
-        }
+template <typename T>
+auto string_to(const string& s)
+{
+T value;
+istringstream ss(s);
+return ((ss >> value) and (ss >> ws).eof())
+? value
+: optional <T>{ };
+}
 
 
-    }
-    catch (string e) {
-        cin.clear();
-        cout << "I'm sorry, but your input is invalid. Could you please try again?" << endl;
-        cin >> DaysNumber;
-    }
+template <typename T>
+auto ask(const string& prompt)
+{
+string s;
+cout << prompt;
+getline(cin, s);
+return string_to <T>(s);
+}
 
-    catch (double e) {
-        cin.clear();
-        cout << "I'm sorry, but your input is invalid. Could you please try again?" << endl;
-        cin >> DaysNumber;
-    }
-    return 0;
-};
+
+template <typename T, typename Verify>
+T ask(const string& prompt, Verify verify, const string& error_message)
+{
+auto value = ask <int>(prompt);
+if (!value or !verify(*value))
+throw runtime_error(error_message);
+return *value;
+}
+
+
+int main()
+try
+{
+int daysNumber = ask <int>(
+"How many days has it been since you have had some yummy tots? ",
+[](int value) { return value >= 0; },
+"Number of days must be an integer value â‰¥ 0.");
+
+if (daysNumber > 7)
+{
+cout
+<< "Yay! I bet those tots were delicious.\n"
+<< "Here's a recipe to try next time you want to eat tater tots:\n"
+<< "https://www.allrecipes.com/recipe/236749/tater-tots-nachos/\n";
+}
+else
+{
+cout
+<< "It. Is. TATER TOT TIME!\n"
+<< "Go enjoy some yummy tots!\n"
+<< "https://www.allrecipes.com/recipe/236749/tater-tots-nachos/\n";
+}
+}
+catch (const exception& e)
+{
+std::cerr << e.what() << "\n";
+return 1;
+}
